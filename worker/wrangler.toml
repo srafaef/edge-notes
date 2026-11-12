@@ -1,0 +1,7 @@
+name = "edge-notes-api"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+
+# DATABASE_URL is stored as an encrypted Worker secret:
+#   npx wrangler secret put DATABASE_URL
+# (or via the Cloudflare API / MCP; never commit it here)

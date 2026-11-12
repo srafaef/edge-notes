@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Edge Notes — Render · Worker · Neon</title>
+    <style>
+      :root {
+        --bg: #0b0f17;
+        --panel: #121826;
+        --panel-2: #0f1420;
+        --text: #e6edf7;
+        --muted: #8b97ab;
+        --line: #202a3d;
+        --accent: #6ee7b7;
+        --accent-2: #60a5fa;
+        --danger: #f87171;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; }
+      body {
+        background:
+          radial-gradient(900px 500px at 15% -10%, #1b2a4a 0%, transparent 60%),
+          radial-gradient(700px 400px at 95% 0%, #173a33 0%, transparent 55%),
+          var(--bg);
+        color: var(--text);
+        font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        min-height: 100%;
+      }
+      .wrap { max-width: 860px; margin: 0 auto; padding: 40px 20px 80px; }
+      header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+      .logo {
+        width: 44px; height: 44px; border-radius: 12px; flex: 0 0 auto;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        display: grid; place-items: center; color: #06121a; font-weight: 800; font-size: 20px;
+        box-shadow: 0 8px 30px rgba(96,165,250,.25);
+      }
+      h1 { font-size: 26px; margin: 0; letter-spacing: -0.02em; }
+      .sub { color: var(--muted); margin: 2px 0 0; font-size: 13px; }
+      .stack {
+        display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 26px;
+        font-size: 12px; color: var(--muted);
+      }
+      .chip {
+        border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px;
+        background: rgba(255,255,255,.02);
+      }
+      .chip b { color: var(--text); font-weight: 600; }
+      .card {
+        background: linear-gradient(180deg, rgba(255,255,255,.03), transparent 40%), var(--panel);
+        border: 1px solid var(--line); border-radius: 16px; padding: 18px;
+        box-shadow: 0 20px 60px rgba(0,0,0,.35);
+      }
+      .card + .card { margin-top: 18px; }
+      label { display: block; font-size: 12px; color: var(--muted); margin: 0 0 6px; }
+      input, textarea {
+        width: 100%; background: var(--panel-2); color: var(--text);
+        border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px;
+        font: inherit; outline: none; transition: border-color .15s, box-shadow .15s;
+      }
+      input:focus, textarea:focus {
+        border-color: #33507d; box-shadow: 0 0 0 3px rgba(96,165,250,.15);
+      }
+      textarea { min-height: 92px; resize: vertical; }
+      .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .actions { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+      button {
+        font: inherit; font-weight: 600; cursor: pointer; border-radius: 10px;
+        border: 1px solid transparent; padding: 10px 16px; transition: transform .05s, opacity .15s;
+      }
+      button:active { transform: translateY(1px); }
+      button:disabled { opacity: .55; cursor: not-allowed; }
+      .primary { background: linear-gradient(135deg, var(--accent), #34d399); color: #04140f; }
+      .ghost { background: transparent; color: var(--text); border-color: var(--line); }
+      .status { color: var(--muted); font-size: 13px; }
+      .status.err { color: var(--danger); }
+      .list { margin-top: 22px; display: grid; gap: 12px; }
+      .note {
+        background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px;
+        display: flex; gap: 14px; align-items: flex-start;
+      }
+      .note .body { flex: 1; min-width: 0; }
+      .note h3 { margin: 0 0 4px; font-size: 15px; }
+      .note p { margin: 0; color: #c4cedd; white-space: pre-wrap; overflow-wrap: anywhere; }
+      .note time { display: block; color: var(--muted); font-size: 11px; margin-top: 8px; }
+      .del {
+        background: transparent; border: 1px solid #3a2330; color: #fca5a5;
+        padding: 6px 10px; font-size: 12px; border-radius: 8px; flex: 0 0 auto;
+      }
+      .empty { color: var(--muted); text-align: center; padding: 26px; border: 1px dashed var(--line); border-radius: 14px; }
+      footer { margin-top: 34px; color: var(--muted); font-size: 12px; text-align: center; }
+      a { color: var(--accent-2); text-decoration: none; }
+      @media (max-width: 560px) { .row { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="logo">E</div>
+        <div>
+          <h1>Edge Notes</h1>
+          <p class="sub">Render'da site, arada Cloudflare Worker, veritabanı Neon'da.</p>
+        </div>
+      </header>
+
+      <div class="stack">
+        <span class="chip">🖥️ <b>Render</b> · statik site</span>
+        <span class="chip">⚡ <b>Cloudflare Worker</b> · edge API</span>
+        <span class="chip">🐘 <b>Neon</b> · Postgres</span>
+      </div>
+
+      <div class="card">
+        <form id="form">
+          <div class="row">
+            <div>
+              <label for="title">Başlık</label>
+              <input id="title" maxlength="200" placeholder="Kısa bir başlık" />
+            </div>
+            <div>
+              <label for="content">Not</label>
+              <textarea id="content" maxlength="5000" placeholder="Aklından ne geçiyor?"></textarea>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="primary" id="add" type="submit">Notu kaydet</button>
+            <button class="ghost" id="refresh" type="button">Yenile</button>
+            <span class="status" id="status"></span>
+          </div>
+        </form>
+      </div>
+
+      <div class="list" id="list"></div>
+
+      <footer>
+        API: <a id="apiLink" href="#" target="_blank" rel="noreferrer">—</a>
+      </footer>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+      const API = (window.API_BASE || "").replace(/\/$/, "");
+      const $ = (id) => document.getElementById(id);
+      const listEl = $("list");
+      const statusEl = $("status");
+      const apiLink = $("apiLink");
+
+      apiLink.textContent = API || "config.js içinde tanımlanmadı";
+      apiLink.href = API || "#";
+
+      function setStatus(msg, isError = false) {
+        statusEl.textContent = msg || "";
+        statusEl.className = "status" + (isError ? " err" : "");
+      }
+
+      function esc(s) {
+        return String(s ?? "").replace(/[&<>"']/g, (c) =>
+          ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+      }
+
+      function fmt(ts) {
+        try {
+          return new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(ts));
+        } catch { return ts; }
+      }
+
+      async function api(path, options = {}) {
+        if (!API) throw new Error("API adresi tanımlı değil (web/config.js)");
+        const res = await fetch(API + path, {
+          ...options,
+          headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        return data;
+      }
+
+      function render(notes) {
+        if (!notes.length) {
+          listEl.innerHTML = '<div class="empty">Henüz not yok. İlk notunu ekle 👆</div>';
+          return;
+        }
+        listEl.innerHTML = notes
+          .map(
+            (n) => `
+            <article class="note">
+              <div class="body">
+                <h3>${esc(n.title) || "(başlıksız)"}</h3>
+                ${n.content ? `<p>${esc(n.content)}</p>` : ""}
+                <time>${fmt(n.created_at)}</time>
+              </div>
+              <button class="del" data-id="${esc(n.id)}" title="Sil">Sil</button>
+            </article>`,
+          )
+          .join("");
+      }
+
+      async function load() {
+        setStatus("Yükleniyor…");
+        try {
+          const { notes } = await api("/api/notes");
+          render(notes);
+          setStatus(`${notes.length} not`);
+        } catch (e) {
+          setStatus(e.message, true);
+          listEl.innerHTML = "";
+        }
+      }
+
+      $("form").addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        const title = $("title").value.trim();
+        const content = $("content").value.trim();
+        if (!title && !content) return setStatus("Başlık veya not yaz.", true);
+        $("add").disabled = true;
+        setStatus("Kaydediliyor…");
+        try {
+          await api("/api/notes", { method: "POST", body: JSON.stringify({ title, content }) });
+          $("title").value = "";
+          $("content").value = "";
+          await load();
+        } catch (e) {
+          setStatus(e.message, true);
+        } finally {
+          $("add").disabled = false;
+        }
+      });
+
+      listEl.addEventListener("click", async (ev) => {
+        const btn = ev.target.closest(".del");
+        if (!btn) return;
+        btn.disabled = true;
+        try {
+          await api("/api/notes/" + btn.dataset.id, { method: "DELETE" });
+          await load();
+        } catch (e) {
+          setStatus(e.message, true);
+          btn.disabled = false;
+        }
+      });
+
+      $("refresh").addEventListener("click", load);
+      load();
+    </script>
+  </body>
+</html>
