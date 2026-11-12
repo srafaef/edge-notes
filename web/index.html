@@ -40,6 +40,66 @@
         color-scheme: light;
       }
 
+      html[data-theme="minimal"] {
+        --bg: #ffffff;
+        --bg-2: #ffffff;
+        --surface: #ffffff;
+        --surface-2: #f5f5f5;
+        --solid: #ffffff;
+        --border: #d4d4d4;
+        --border-strong: #9a9a9a;
+        --text: #111111;
+        --muted: #555555;
+        --violet: #111111;
+        --indigo: #111111;
+        --cyan: #111111;
+        --emerald: #111111;
+        --danger: #b00020;
+        --shadow: none;
+        --radius: 8px;
+        color-scheme: light;
+      }
+      html[data-theme="minimal"] body { background: #ffffff; }
+      html[data-theme="minimal"] .bg { display: none; }
+      html[data-theme="minimal"] .topbar { backdrop-filter: none; -webkit-backdrop-filter: none; background: #ffffff; border-bottom-color: #d4d4d4; }
+      html[data-theme="minimal"] .card,
+      html[data-theme="minimal"] .note,
+      html[data-theme="minimal"] .stat,
+      html[data-theme="minimal"] .toast {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        box-shadow: none;
+      }
+      html[data-theme="minimal"] .logo {
+        background: #111111;
+        box-shadow: none;
+      }
+      html[data-theme="minimal"] .primary {
+        background: #111111;
+        color: #ffffff;
+        box-shadow: none;
+      }
+      html[data-theme="minimal"] .primary:hover:not(:disabled) { background: #333333; box-shadow: none; }
+      html[data-theme="minimal"] h1 em {
+        background: none;
+        -webkit-text-fill-color: #111111;
+        color: #111111;
+      }
+      html[data-theme="minimal"] .chip i { background: #9a9a9a; }
+      html[data-theme="minimal"] .note::before { background: #9a9a9a; opacity: 0.6; }
+      html[data-theme="minimal"] .eyebrow::before { background: #9a9a9a; }
+      html[data-theme="minimal"] .dot.ok { background: #111111; box-shadow: none; }
+      html[data-theme="minimal"] .badge {
+        background: #f0f0f0;
+        color: #111111;
+        border-color: #d4d4d4;
+      }
+      html[data-theme="minimal"] .skel {
+        background: #eeeeee;
+        animation: none;
+      }
+      html[data-theme="minimal"] .empty { border-style: solid; }
+
       * { box-sizing: border-box; }
       html, body { margin: 0; min-height: 100%; }
       body {
@@ -158,8 +218,10 @@
       .icon-btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
       .icon-btn:active { transform: translateY(1px); }
       .icon-btn svg { width: 16px; height: 16px; }
-      html[data-theme="light"] .moon { display: none; }
-      html[data-theme="dark"] .sun { display: none; }
+      html[data-theme="light"] .moon, html[data-theme="light"] .mn { display: none; }
+      html[data-theme="dark"] .sun, html[data-theme="dark"] .mn { display: none; }
+      html[data-theme="minimal"] .moon, html[data-theme="minimal"] .sun { display: none; }
+      html[data-theme="minimal"] .mn { display: block; }
 
       /* ---------- layout ---------- */
       .wrap { max-width: 1120px; margin: 0 auto; padding: 44px 22px 90px; }
@@ -479,6 +541,7 @@
         <button class="icon-btn" id="themeBtn" type="button" title="Temayı değiştir" aria-label="Temayı değiştir">
           <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.8 6.8 0 0 0 9.8 9.8Z"/></svg>
           <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          <svg class="mn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 12h8M8 15h5"/></svg>
         </button>
       </div>
     </header>
@@ -741,14 +804,21 @@
 
       /* ---------- theme ---------- */
       const root = document.documentElement;
+      const THEMES = ["dark", "light", "minimal"];
+      const THEME_LABEL = { dark: "Koyu tema", light: "Açık tema", minimal: "Sade tema" };
       try {
         const saved = localStorage.getItem("edge-notes-theme");
-        if (saved) root.dataset.theme = saved;
+        if (saved && THEMES.includes(saved)) root.dataset.theme = saved;
       } catch {}
       $("themeBtn").addEventListener("click", () => {
-        root.dataset.theme = root.dataset.theme === "light" ? "dark" : "light";
-        try { localStorage.setItem("edge-notes-theme", root.dataset.theme); } catch {}
+        const cur = THEMES.indexOf(root.dataset.theme);
+        const next = THEMES[(cur + 1) % THEMES.length];
+        root.dataset.theme = next;
+        $("themeBtn").title = THEME_LABEL[next] + " — değiştirmek için tıkla";
+        $("themeBtn").setAttribute("aria-label", THEME_LABEL[next] + " — değiştirmek için tıkla");
+        try { localStorage.setItem("edge-notes-theme", next); } catch {}
       });
+      $("themeBtn").title = THEME_LABEL[root.dataset.theme] + " — değiştirmek için tıkla";
 
       /* ---------- wiring ---------- */
       $("form").addEventListener("submit", addNote);
