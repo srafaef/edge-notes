@@ -1,3 +1,2 @@
-// Filled in after the Worker is deployed. Example:
-// window.API_BASE = "https://edge-notes-api.your-subdomain.workers.dev";
-window.API_BASE = "";
+// Cloudflare Worker API adresi (Render'daki site bunu kullanır).
+window.API_BASE = "https://edge-notes-api.bakisinesimdi.workers.dev";
